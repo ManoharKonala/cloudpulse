@@ -2,7 +2,7 @@
 # take effect without rebuilding the image.
 # NOTE: Prometheus → 9091, Grafana → 3001, node-exporter → 9101
 # (remapped in docker-compose.yml to avoid conflicts with TodoFlow stack)
-version: '3.8'
+version: '3.7'
 services:
   product-service:
     volumes:

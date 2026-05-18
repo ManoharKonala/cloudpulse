@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.7'
 services:
   product-service:
     image: ${DOCKERHUB_USER}/cloudpulse-product-service:latest
