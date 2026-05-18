@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudPulse Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-bg: #0f172a;
+      --sidebar-w: 220px;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --content-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-primary: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      min-height: 100vh;
+      background: var(--content-bg);
+      color: var(--text-primary);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+    }
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .sidebar-logo h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-logo p { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+    .nav { margin-top: 16px; }
+    .nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .nav a:hover, .nav a.active {
+      color: #fff;
+      background: rgba(99,102,241,0.12);
+      border-left-color: var(--accent);
+    }
+    .nav a svg { flex-shrink: 0; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid #1e293b;
+      font-size: 0.7rem;
+      color: #475569;
+    }
+
+    /* ── Main ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar h2 { font-size: 1rem; font-weight: 600; }
+    .health-bar { display: flex; gap: 12px; }
+    .health-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: #f1f5f9;
+      color: var(--text-muted);
+    }
+    .health-chip .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+    }
+    .health-chip.up .dot { background: var(--success); box-shadow: 0 0 0 2px #bbf7d0; }
+    .health-chip.down .dot { background: var(--danger); box-shadow: 0 0 0 2px #fecaca; }
+
+    .content { padding: 32px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .card-title { font-size: 0.9375rem; font-weight: 600; }
+    .badge {
+      font-size: 0.6875rem; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      background: #ede9fe; color: var(--accent);
+    }
+
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    th {
+      text-align: left; padding: 8px 12px;
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .status-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .status-chip.confirmed { background: #dcfce7; color: #166534; }
+    .status-chip.pending   { background: #fef9c3; color: #854d0e; }
+
+    /* ── Forms ── */
+    .forms { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; color: var(--text-muted); }
+    input, select {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    button {
+      padding: 9px 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error   { background: #dc2626; }
+
+    .empty { text-align: center; padding: 32px; color: var(--text-muted); font-size: 0.875rem; }
+    .spinner { text-align: center; padding: 24px; color: var(--text-muted); }
+
+    @media (max-width: 900px) {
+      .panels, .forms { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Cloud<span>Pulse</span></h1>
+    <p>Operations Dashboard</p>
+  </div>
+  <nav class="nav">
+    <a href="#" class="active">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </a>
+    <a href="http://localhost:9090" target="_blank">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Prometheus
+    </a>
+    <a href="http://localhost:3000" target="_blank">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Grafana
+    </a>
+  </nav>
+  <div class="sidebar-footer">CloudPulse v1.0.0</div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <h2>Product &amp; Order Management</h2>
+    <div class="health-bar">
+      <div class="health-chip" id="health-product">
+        <span class="dot"></span> product-service
+      </div>
+      <div class="health-chip" id="health-order">
+        <span class="dot"></span> order-service
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- Data panels -->
+    <div class="panels">
+      <!-- Products panel -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Products</span>
+          <span class="badge" id="product-count">...</span>
+        </div>
+        <div id="products-table"><div class="spinner">Loading...</div></div>
+      </div>
+
+      <!-- Orders panel -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Orders</span>
+          <span class="badge" id="order-count">...</span>
+        </div>
+        <div id="orders-table"><div class="spinner">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- Forms -->
+    <div class="forms">
+      <!-- Add product -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Add Product</span>
+        </div>
+        <form id="product-form">
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="p-name" placeholder='e.g. Gaming Headset' required />
+          </div>
+          <div class="form-group">
+            <label>Price ($)</label>
+            <input type="number" id="p-price" placeholder="0.00" step="0.01" min="0" required />
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" id="p-stock" placeholder="0" min="0" value="0" />
+          </div>
+          <button type="submit">Add Product</button>
+        </form>
+      </div>
+
+      <!-- Place order -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Place Order</span>
+        </div>
+        <form id="order-form">
+          <div class="form-group">
+            <label>Product</label>
+            <select id="o-product" required>
+              <option value="">Select a product...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="o-qty" value="1" min="1" required />
+          </div>
+          <button type="submit">Place Order</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = {
+    products:        '/api/products',
+    orders:          '/api/orders',
+    healthProducts:  '/api/health/products',
+    healthOrders:    '/api/health/orders',
+  };
+
+  async function fetchJSON(url, opts = {}) {
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${r.status}`);
+    }
+    return r.json();
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Health checks ──
+  async function checkHealth() {
+    for (const [svc, url, id] of [
+      ['product', API.healthProducts, 'health-product'],
+      ['order',   API.healthOrders,   'health-order'],
+    ]) {
+      const chip = document.getElementById(id);
+      try {
+        await fetchJSON(url);
+        chip.classList.add('up');
+        chip.classList.remove('down');
+      } catch {
+        chip.classList.add('down');
+        chip.classList.remove('up');
+      }
+    }
+  }
+
+  // ── Products ──
+  async function loadProducts() {
+    try {
+      const products = await fetchJSON(API.products);
+      document.getElementById('product-count').textContent = `${products.length} items`;
+
+      const select = document.getElementById('o-product');
+      select.innerHTML = '<option value="">Select a product...</option>';
+      products.forEach(p => {
+        select.insertAdjacentHTML('beforeend',
+          `<option value="${p.id}">${p.name} — $${p.price.toFixed(2)}</option>`);
+      });
+
+      if (!products.length) {
+        document.getElementById('products-table').innerHTML =
+          '<div class="empty">No products yet. Add one below.</div>';
+        return;
+      }
+      document.getElementById('products-table').innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th></tr></thead>
+          <tbody>
+            ${products.map(p => `
+              <tr>
+                <td>#${p.id}</td>
+                <td>${p.name}</td>
+                <td>$${p.price.toFixed(2)}</td>
+                <td>${p.stock}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch (e) {
+      document.getElementById('products-table').innerHTML =
+        `<div class="empty">Failed to load products: ${e.message}</div>`;
+    }
+  }
+
+  // ── Orders ──
+  async function loadOrders() {
+    try {
+      const orders = await fetchJSON(API.orders);
+      document.getElementById('order-count').textContent = `${orders.length} total`;
+      if (!orders.length) {
+        document.getElementById('orders-table').innerHTML =
+          '<div class="empty">No orders yet. Place one below.</div>';
+        return;
+      }
+      document.getElementById('orders-table').innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Product</th><th>Qty</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody>
+            ${orders.slice(0, 20).map(o => `
+              <tr>
+                <td>#${o.id}</td>
+                <td>#${o.product_id}</td>
+                <td>${o.quantity}</td>
+                <td><span class="status-chip ${o.status}">${o.status}</span></td>
+                <td>${o.created_at.slice(0, 16).replace('T', ' ')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch (e) {
+      document.getElementById('orders-table').innerHTML =
+        `<div class="empty">Failed to load orders: ${e.message}</div>`;
+    }
+  }
+
+  // ── Form: add product ──
+  document.getElementById('product-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    try {
+      await fetchJSON(API.products, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name:  document.getElementById('p-name').value.trim(),
+          price: parseFloat(document.getElementById('p-price').value),
+          stock: parseInt(document.getElementById('p-stock').value) || 0,
+        })
+      });
+      e.target.reset();
+      showToast('Product added successfully!');
+      await loadProducts();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── Form: place order ──
+  document.getElementById('order-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    try {
+      await fetchJSON(API.orders, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          product_id: parseInt(document.getElementById('o-product').value),
+          quantity:   parseInt(document.getElementById('o-qty').value),
+        })
+      });
+      e.target.reset();
+      showToast('Order placed successfully!');
+      await loadOrders();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── Init ──
+  (async () => {
+    await Promise.all([loadProducts(), loadOrders(), checkHealth()]);
+    setInterval(checkHealth, 30_000);
+    setInterval(() => Promise.all([loadProducts(), loadOrders()]), 60_000);
+  })();
+</script>
+</body>
+</html>

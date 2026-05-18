@@ -1,0 +1,57 @@
+name: Lint & Syntax Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  lint-python:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install product-service deps
+        working-directory: services/product-service
+        run: pip install -r requirements.txt
+
+      - name: Check product-service syntax
+        working-directory: services/product-service
+        run: python -m py_compile app.py && echo "product-service OK"
+
+      - name: Install order-service deps
+        working-directory: services/order-service
+        run: pip install -r requirements.txt
+
+      - name: Check order-service syntax
+        working-directory: services/order-service
+        run: python -m py_compile app.py && echo "order-service OK"
+
+  lint-docker:
+    name: Dockerfile Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfiles with Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/product-service/Dockerfile
+          failure-threshold: warning
+
+      - name: Lint order-service Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/order-service/Dockerfile
+          failure-threshold: warning

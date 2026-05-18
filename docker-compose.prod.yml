@@ -1,0 +1,38 @@
+services:
+  product-service:
+    image: ${DOCKERHUB_USER}/cloudpulse-product-service:latest
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - cloudpulse-net
+    restart: always
+
+  order-service:
+    image: ${DOCKERHUB_USER}/cloudpulse-order-service:latest
+    ports:
+      - "5002:5002"
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:5001
+      - FLASK_ENV=production
+    depends_on:
+      - product-service
+    networks:
+      - cloudpulse-net
+    restart: always
+
+  frontend:
+    image: ${DOCKERHUB_USER}/cloudpulse-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - product-service
+      - order-service
+    networks:
+      - cloudpulse-net
+    restart: always
+
+networks:
+  cloudpulse-net:
+    driver: bridge
