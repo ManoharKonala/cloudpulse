@@ -24,12 +24,18 @@ pipeline {
             }
         }
 
+        // ── FIX 1: Bootstrap pip if it is not present on the Jenkins agent ──────
         stage('Lint & Test') {
             parallel {
                 stage('Test — Product Service') {
                     steps {
                         dir('services/product-service') {
                             sh '''
+                                # Ensure pip is available; install it if missing
+                                python3 -m ensurepip --upgrade 2>/dev/null || \
+                                    curl -sSL https://bootstrap.pypa.io/get-pip.py | python3
+
+                                python3 -m pip install --quiet --upgrade pip
                                 python3 -m pip install --quiet -r requirements.txt
                                 python3 -m py_compile app.py
                                 echo "Syntax OK: product-service"
@@ -41,6 +47,11 @@ pipeline {
                     steps {
                         dir('services/order-service') {
                             sh '''
+                                # Ensure pip is available; install it if missing
+                                python3 -m ensurepip --upgrade 2>/dev/null || \
+                                    curl -sSL https://bootstrap.pypa.io/get-pip.py | python3
+
+                                python3 -m pip install --quiet --upgrade pip
                                 python3 -m pip install --quiet -r requirements.txt
                                 python3 -m py_compile app.py
                                 echo "Syntax OK: order-service"
@@ -51,9 +62,24 @@ pipeline {
             }
         }
 
+        // ── FIX 2: Verify Docker is reachable before any docker commands ─────────
         stage('Prepare Docker') {
             steps {
-                sh 'sudo chmod 666 /var/run/docker.sock'
+                sh '''
+                    # Make the socket accessible to the jenkins user
+                    sudo chmod 666 /var/run/docker.sock
+
+                    # Confirm docker CLI is on PATH (fails fast with a clear message)
+                    if ! command -v docker >/dev/null 2>&1; then
+                        echo "ERROR: docker CLI not found on PATH. Add the Docker socket"
+                        echo "volume AND the docker binary to the Jenkins container, e.g.:"
+                        echo "  -v /usr/bin/docker:/usr/bin/docker"
+                        echo "  -v /var/run/docker.sock:/var/run/docker.sock"
+                        exit 1
+                    fi
+
+                    docker version
+                '''
             }
         }
 
@@ -76,7 +102,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Push to DockerHub') {
             steps {
@@ -139,7 +164,9 @@ pipeline {
             echo "Pipeline FAILED at stage: ${STAGE_NAME}. Check logs above."
         }
         always {
-            sh 'docker logout || true'
+            // FIX 3: || true already present — also guard with command -v so the
+            // post block never fails when docker CLI is absent on the agent
+            sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
         }
     }
 }
