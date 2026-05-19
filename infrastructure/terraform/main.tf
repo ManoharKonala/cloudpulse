@@ -129,6 +129,14 @@ resource "aws_instance" "cloudpulse_app" {
   user_data = <<-EOF
     #!/bin/bash
     set -e
+    
+    # Create a 2GB Swap file to prevent OOM on t2.micro
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo "/swapfile none swap sw 0 0" >> /etc/fstab
+
     apt-get update -y
     apt-get install -y docker.io docker-compose git
     systemctl start docker
