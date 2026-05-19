@@ -161,10 +161,7 @@ pipeline {
             echo "Pipeline SUCCESS — Build #${BUILD_NUMBER} deployed to http://${APP_SERVER_IP}"
         }
         failure {
-            echo "Pipeline FAILED at stage: ${STAGE_NAME}. Check logs above."
-        }
-        always {
-            sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
+            echo "Pipeline FAILED. Check logs above."
         }
     }
 }
