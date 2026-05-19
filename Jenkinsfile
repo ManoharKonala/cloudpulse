@@ -110,10 +110,15 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'APP_SERVER_SSH_KEY', keyFileVariable: 'SSH_KEY')]) {
                     sh '''
                         ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} "
+                            if [ ! -d /opt/cloudpulse/.git ]; then
+                                sudo rm -rf /opt/cloudpulse
+                                sudo git clone https://github.com/ManoharKonala/cloudpulse /opt/cloudpulse
+                                sudo chown -R ubuntu:ubuntu /opt/cloudpulse
+                            fi
                             cd /opt/cloudpulse &&
                             git pull origin main &&
-                            DOCKERHUB_USER=${DOCKERHUB_USER} docker-compose -f docker-compose.prod.yml pull &&
-                            DOCKERHUB_USER=${DOCKERHUB_USER} docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+                            DOCKERHUB_USER=manohar122 docker-compose -f docker-compose.prod.yml pull &&
+                            DOCKERHUB_USER=manohar122 docker-compose -f docker-compose.prod.yml up -d --remove-orphans
                         "
                     '''
                 }
