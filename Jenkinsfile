@@ -164,9 +164,11 @@ pipeline {
             echo "Pipeline FAILED at stage: ${STAGE_NAME}. Check logs above."
         }
         always {
-            // FIX 3: || true already present — also guard with command -v so the
-            // post block never fails when docker CLI is absent on the agent
-            sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
+            // Wrap in node{} so sh has a FilePath context even if the pipeline
+            // failed before any stage acquired a node (e.g. missing credential).
+            node {
+                sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
+            }
         }
     }
 }

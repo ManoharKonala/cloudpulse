@@ -121,7 +121,7 @@ resource "aws_key_pair" "cloudpulse_key" {
 # ── App EC2 Instance ─────────────────────────────────────────────────
 resource "aws_instance" "cloudpulse_app" {
   ami                    = var.ami_id
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.cloudpulse_subnet.id
   vpc_security_group_ids = [aws_security_group.cloudpulse_sg.id]
   key_name               = aws_key_pair.cloudpulse_key.key_name
@@ -152,7 +152,7 @@ resource "aws_instance" "cloudpulse_app" {
 # ── Jenkins EC2 Instance ─────────────────────────────────────────────
 resource "aws_instance" "cloudpulse_jenkins" {
   ami                    = var.ami_id
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.cloudpulse_subnet.id
   vpc_security_group_ids = [aws_security_group.cloudpulse_sg.id]
   key_name               = aws_key_pair.cloudpulse_key.key_name
@@ -161,27 +161,43 @@ resource "aws_instance" "cloudpulse_jenkins" {
     #!/bin/bash
     set -e
     
-    # Create a 2GB Swap file to prevent OOM on t2.micro
-    fallocate -l 2G /swapfile
-    chmod 600 /swapfile
-    mkswap /swapfile
-    swapon /swapfile
-    echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    # Create a 2GB Swap file only if it doesn't already exist to allow safe retries
+    if [ ! -f /swapfile ]; then
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    fi
 
+    # Clean up any existing Jenkins list to avoid GPG signature issues
+    rm -f /etc/apt/sources.list.d/jenkins.list
+
+    # Setup the modern, secure Jenkins repository and 2026 GPG keys FIRST
+    mkdir -p /usr/share/keyrings
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key | tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+    # Now update and install everything in a single run
     apt-get update -y
-    apt-get install -y openjdk-21-jdk docker.io git curl python3-pip
+    apt-get install -y openjdk-21-jdk docker.io git curl python3-pip jenkins
+
     systemctl start docker
     systemctl enable docker
-
-    # Install Jenkins securely
-    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-    
-    apt-get update -y
-    apt-get install -y jenkins
     systemctl start jenkins
     systemctl enable jenkins
     usermod -aG docker jenkins
+
+    # Wait for Jenkins to initialize and print password to console output
+    for i in {1..30}; do
+        if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+            echo "=== JENKINS ADMIN PASSWORD START ==="
+            cat /var/lib/jenkins/secrets/initialAdminPassword
+            echo "=== JENKINS ADMIN PASSWORD END ==="
+            break
+        fi
+        sleep 5
+    done
   EOF
 
   tags = { Name = "cloudpulse-jenkins-server" }
