@@ -87,9 +87,9 @@ pipeline {
 
         stage('Deploy to AWS EC2') {
             steps {
-                sshagent(credentials: ['APP_SERVER_SSH_KEY']) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'APP_SERVER_SSH_KEY', keyFileVariable: 'SSH_KEY')]) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} "
+                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} "
                             cd /opt/cloudpulse &&
                             git pull origin main &&
                             DOCKERHUB_USER=${DOCKERHUB_USER} docker-compose -f docker-compose.prod.yml pull &&
@@ -126,7 +126,7 @@ pipeline {
             echo "Pipeline FAILED at stage: ${STAGE_NAME}. Check logs above."
         }
         always {
-            sh 'docker logout || true'
+            echo 'Skipping docker logout (bypassed local proxy)'
         }
     }
 }
