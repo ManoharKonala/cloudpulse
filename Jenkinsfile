@@ -145,7 +145,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline SUCCESS — Build #${BUILD_NUMBER} deployed to http://${APP_SERVER_IP}"
+            echo "Pipeline SUCCESS — Build #${BUILD_NUMBER} deployed to http://${env.APP_SERVER_IP}"
         }
         failure {
             echo "Pipeline FAILED. Check logs above."
