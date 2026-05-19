@@ -51,6 +51,12 @@ pipeline {
             }
         }
 
+        stage('Prepare Docker') {
+            steps {
+                sh 'sudo chmod 666 /var/run/docker.sock'
+            }
+        }
+
         stage('Build Docker Images') {
             parallel {
                 stage('Build Product Service') {
@@ -65,11 +71,12 @@ pipeline {
                 }
                 stage('Build Frontend') {
                     steps {
-                        sh "docker build -t ${IMAGE_FRONTEND}:${BUILD_NUMBER} -t ${IMAGE_FRONTEND}:latest ./frontend"
+                        sh "docker build -t ${IMAGE_FRONTEND}:${BUILD_NUMBER} -t ${IMAGE_FRONTEND}:latest ./services/frontend"
                     }
                 }
             }
         }
+
 
         stage('Push to DockerHub') {
             steps {
