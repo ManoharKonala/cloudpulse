@@ -164,11 +164,7 @@ pipeline {
             echo "Pipeline FAILED at stage: ${STAGE_NAME}. Check logs above."
         }
         always {
-            // Wrap in node{} so sh has a FilePath context even if the pipeline
-            // failed before any stage acquired a node (e.g. missing credential).
-            node {
-                sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
-            }
+            sh 'command -v docker >/dev/null 2>&1 && docker logout || true'
         }
     }
 }
