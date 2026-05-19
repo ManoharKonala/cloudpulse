@@ -152,15 +152,23 @@ resource "aws_instance" "cloudpulse_jenkins" {
   user_data = <<-EOF
     #!/bin/bash
     set -e
+    
+    # Create a 2GB Swap file to prevent OOM on t2.micro
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo "/swapfile none swap sw 0 0" >> /etc/fstab
+
     apt-get update -y
-    apt-get install -y openjdk-17-jdk docker.io git curl
+    apt-get install -y openjdk-21-jdk docker.io git curl python3-pip
     systemctl start docker
     systemctl enable docker
-    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
-      | tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-      https://pkg.jenkins.io/debian-stable binary/" \
-      | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+    # Install Jenkins securely
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+    
     apt-get update -y
     apt-get install -y jenkins
     systemctl start jenkins
