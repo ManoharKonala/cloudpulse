@@ -31,12 +31,7 @@ pipeline {
                     steps {
                         dir('services/product-service') {
                             sh '''
-                                # Ensure pip is available; install it if missing
-                                python3 -m ensurepip --upgrade 2>/dev/null || \
-                                    curl -sSL https://bootstrap.pypa.io/get-pip.py | python3
-
-                                python3 -m pip install --quiet --upgrade pip
-                                python3 -m pip install --quiet -r requirements.txt
+                                python3 -m pip install --quiet --break-system-packages -r requirements.txt
                                 python3 -m py_compile app.py
                                 echo "Syntax OK: product-service"
                             '''
@@ -47,12 +42,7 @@ pipeline {
                     steps {
                         dir('services/order-service') {
                             sh '''
-                                # Ensure pip is available; install it if missing
-                                python3 -m ensurepip --upgrade 2>/dev/null || \
-                                    curl -sSL https://bootstrap.pypa.io/get-pip.py | python3
-
-                                python3 -m pip install --quiet --upgrade pip
-                                python3 -m pip install --quiet -r requirements.txt
+                                python3 -m pip install --quiet --break-system-packages -r requirements.txt
                                 python3 -m py_compile app.py
                                 echo "Syntax OK: order-service"
                             '''
