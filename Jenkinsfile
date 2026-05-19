@@ -52,22 +52,14 @@ pipeline {
             }
         }
 
-        // ── FIX 2: Verify Docker is reachable before any docker commands ─────────
+        // ── Verify Docker is reachable ───────────────────────────────────────────
         stage('Prepare Docker') {
             steps {
                 sh '''
-                    # Make the socket accessible to the jenkins user
-                    sudo chmod 666 /var/run/docker.sock
-
-                    # Confirm docker CLI is on PATH (fails fast with a clear message)
                     if ! command -v docker >/dev/null 2>&1; then
-                        echo "ERROR: docker CLI not found on PATH. Add the Docker socket"
-                        echo "volume AND the docker binary to the Jenkins container, e.g.:"
-                        echo "  -v /usr/bin/docker:/usr/bin/docker"
-                        echo "  -v /var/run/docker.sock:/var/run/docker.sock"
+                        echo "ERROR: docker CLI not found on PATH."
                         exit 1
                     fi
-
                     docker version
                 '''
             }
