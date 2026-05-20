@@ -226,11 +226,11 @@
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       Overview
     </a>
-    <a href="http://localhost:9090" target="_blank">
+    <a href="http://localhost:9090" id="prometheus-link" target="_blank">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Prometheus
     </a>
-    <a href="http://localhost:3000" target="_blank">
+    <a href="http://localhost:3000" id="grafana-link" target="_blank">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Grafana
     </a>
@@ -487,6 +487,12 @@
     await Promise.all([loadProducts(), loadOrders(), checkHealth()]);
     setInterval(checkHealth, 30_000);
     setInterval(() => Promise.all([loadProducts(), loadOrders()]), 60_000);
+
+    // ── Dynamic Monitoring Links (Port clash fix) ──
+    const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    document.getElementById('prometheus-link').href = `http://${hostname}:${isLocal ? '9091' : '9090'}`;
+    document.getElementById('grafana-link').href = `http://${hostname}:${isLocal ? '3001' : '3000'}`;
   })();
 </script>
 </body>
