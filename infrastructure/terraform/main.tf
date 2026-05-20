@@ -149,6 +149,13 @@ resource "aws_instance" "cloudpulse_app" {
   tags = { Name = "cloudpulse-app-server" }
 }
 
+# ── Elastic IP for App Server (static IP, survives restarts) ─────────
+resource "aws_eip" "cloudpulse_app_eip" {
+  instance = aws_instance.cloudpulse_app.id
+  domain   = "vpc"
+  tags     = { Name = "cloudpulse-app-eip" }
+}
+
 # ── Jenkins EC2 Instance ─────────────────────────────────────────────
 resource "aws_instance" "cloudpulse_jenkins" {
   ami                    = var.ami_id
@@ -205,8 +212,8 @@ resource "aws_instance" "cloudpulse_jenkins" {
 
 # ── Outputs ──────────────────────────────────────────────────────────
 output "app_server_public_ip" {
-  value       = aws_instance.cloudpulse_app.public_ip
-  description = "Public IP of the CloudPulse application server"
+  value       = aws_eip.cloudpulse_app_eip.public_ip
+  description = "Static Elastic IP of the CloudPulse application server"
 }
 
 output "jenkins_server_public_ip" {
@@ -220,16 +227,16 @@ output "jenkins_url" {
 }
 
 output "app_url" {
-  value       = "http://${aws_instance.cloudpulse_app.public_ip}"
+  value       = "http://${aws_eip.cloudpulse_app_eip.public_ip}"
   description = "CloudPulse frontend URL"
 }
 
 output "grafana_url" {
-  value       = "http://${aws_instance.cloudpulse_app.public_ip}:3000"
+  value       = "http://${aws_eip.cloudpulse_app_eip.public_ip}:3000"
   description = "Grafana dashboard URL"
 }
 
 output "prometheus_url" {
-  value       = "http://${aws_instance.cloudpulse_app.public_ip}:9090"
+  value       = "http://${aws_eip.cloudpulse_app_eip.public_ip}:9090"
   description = "Prometheus UI URL"
 }
