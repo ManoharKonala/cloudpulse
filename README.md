@@ -1,4 +1,4 @@
-# CloudPulse — Industrial-Grade DevOps Project
+# CloudPulse — DevOps Project
 
 A microservices-based **Product & Order Management** platform demonstrating the full DevOps toolchain end-to-end: Git → GitHub → Jenkins → Docker → DockerHub → Terraform → AWS EC2 → Prometheus → Grafana.
 
