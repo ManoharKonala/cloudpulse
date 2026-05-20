@@ -27,7 +27,8 @@ REQUEST_LATENCY = Histogram(
     ['method', 'endpoint']
 )
 
-DB_PATH = os.environ.get('DB_PATH', '/tmp/products.db')
+import tempfile
+DB_PATH = os.environ.get('DB_PATH', os.path.join(tempfile.gettempdir(), 'products.db'))
 
 
 def get_db():

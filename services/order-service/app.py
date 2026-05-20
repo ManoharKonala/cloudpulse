@@ -20,7 +20,8 @@ app = Flask(__name__)
 CORS(app)
 
 PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://localhost:5001')
-DB_PATH = os.environ.get('DB_PATH', '/tmp/orders.db')
+import tempfile
+DB_PATH = os.environ.get('DB_PATH', os.path.join(tempfile.gettempdir(), 'orders.db'))
 
 ORDERS_CREATED = Counter(
     'orders_created_total',
